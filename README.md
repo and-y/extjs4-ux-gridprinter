@@ -1,4 +1,4 @@
-Added Support for ExtJS 5.0.x.
+Added Support for ExtJS 5.0.x and for Ext.data.BufferedStore.
 
 #Ext.ux.grid.Printer 
 
@@ -12,13 +12,13 @@ Place the folder ux/grid in your project.
 
 ##Usage
 
-In your application file, please add:
+In your application file, please add the printer to the require array of your component
 
-    Ext.Loader.setConfig({enabled: true});
-
-    Ext.require([
-        'Ext.ux.grid.Printer',
-    ]);
+    ...
+    require: [
+        'Ext.ux.grid.Printer'
+    ],
+    ...
 
 
 Ext.ux.grid.Printer.print just take a single argument - a normal grid instance. Use it like this:
@@ -26,8 +26,9 @@ Ext.ux.grid.Printer.print just take a single argument - a normal grid instance. 
     var myGrid = new Ext.grid.GridPanel({
       //your usual grid config here
     });
-
-    Ext.ux.grid.Printer.print(myGrid);
+    
+    var myGridPrinter = Ext.create('Ext.ux.grid.Printer');
+    myGridPrinter.print(myGrid);
 
 ##Example
 
@@ -37,14 +38,15 @@ Open example.html to see how to use it.
 
 You can customize some options:
 
-* Ext.ux.grid.Printer.printAutomatically = false; - to disable the automatic printing (the print window will not open, user will only see the print version of the grid).
-* Ext.ux.grid.Printer.stylesheetPath = '/some/other/path/gridPrint.css'; - to change the path of the css file.
+* printAutomatically = false; - to disable the automatic printing (the print window will not open, user will only see the print version of the grid).
+* stylesheetPath = '/some/other/path/gridPrint.css'; - to change the path of the css file.
+* ...
 
 You need to set the custom config before calling Ext.ux.grid.Printer.print function.
 
-##Demo
+##Demo for extjs4 gridprinter 
 
-Demo: http://loianegroner.com/extjs/examples/extjs4-ux-gridprinter/
+http://loianegroner.com/extjs/examples/extjs4-ux-gridprinter/
 
 ##Authors
 
