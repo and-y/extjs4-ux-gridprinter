@@ -1,4 +1,5 @@
 Added Support for ExtJS 5.0.x and for Ext.data.BufferedStore.
+Removed Support for ExtJs < 5.0
 
 #Ext.ux.grid.Printer 
 
