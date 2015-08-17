@@ -121,6 +121,12 @@ Ext.define('Ext.ux.grid.Printer', {
     ],
     config: {
         /**
+         * Adds disable cache timestamp to resources
+         * @accessor
+         * @cfg {Boolean} disableCache
+         */
+        disableCache: true,
+        /**
          * The path at which the print stylesheet can be found (defaults to 'ux/grid/gridPrinterCss/print.css')
          * @accessor
          * @cfg {String} stylesheetPath
@@ -259,7 +265,7 @@ Ext.define('Ext.ux.grid.Printer', {
      * @param {Ext.grid.Panel} grid The grid to print
      * @param {Ext.data.Model[]} records
      */
-    printGrid: function (grid, records) {
+    printGrid: function(grid, records) {
         var me = this;
         var htmlMarkup = me.getHtmlMarkup(grid);
         html = Ext.create('Ext.XTemplate', htmlMarkup).apply(records);
@@ -343,6 +349,21 @@ Ext.define('Ext.ux.grid.Printer', {
         }
     },
     /**
+     * Adds _dc-GetParam to the given url when disbaleCache-Config is true.
+     * @returns {String} url appended with dc when disbaleCache-Config is true or
+     *              only the url when disbaleCache-Config is false
+     */
+    addDisableCache: function(url) {
+        var isDisableCache = this.getDisableCache();
+
+        if (!isDisableCache) {
+            return url;
+        }
+
+        var dc = '_dc=' + (new Date()).getTime();
+        return Ext.String.urlAppend(url, dc);
+    },
+    /**
      * Retuns Html markup based of the grid data.
      * @param {Ext.grid.Panel} grid
      * @returns {String} the generated Html
@@ -382,12 +403,12 @@ Ext.define('Ext.ux.grid.Printer', {
             '<html class="' + Ext.baseCSSPrefix + 'ux-grid-printer">',
             '<head>',
             '<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />',
-            '<link href="' + me.getStylesheetPath() + '" rel="stylesheet" type="text/css" />',
+            '<link href="' + me.addDisableCache(me.getStylesheetPath()) + '" rel="stylesheet" type="text/css" />',
             '<title>' + title + '</title>',
             '</head>',
             '<body class="' + Ext.baseCSSPrefix + 'ux-grid-printer-body">',
             '<div class="' + Ext.baseCSSPrefix + 'ux-grid-printer-noprint ' + Ext.baseCSSPrefix + 'ux-grid-printer-links">',
-            '<a class="' + Ext.baseCSSPrefix + 'ux-grid-printer-linkprint" href="javascript:void(0);" onclick="window.print();">' + me.getPrintLinkText() + '</a>',
+            '<a class="' + Ext.baseCSSPrefix + 'ux-grid-printer-linkprint fa-print" href="javascript:void(0);" onclick="window.print();">' + me.getPrintLinkText() + '</a>',
             '<a class="' + Ext.baseCSSPrefix + 'ux-grid-printer-linkclose" href="javascript:void(0);" onclick="window.close();">' + me.getCloseLinkText() + '</a>',
             '</div>',
             '<h1>' + me.getMainTitle() + '</h1>',
