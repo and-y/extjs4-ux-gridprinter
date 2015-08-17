@@ -91,6 +91,27 @@
 // Added support for Buffered Store
 // Added Events
 // Widely added "me = this" for smaller build output
+//
+// MIT License (MIT)
+//
+// Copyright (c) 2015 connors and other contributors
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Ext.define('Ext.ux.grid.Printer', {
     requires: [
         'Ext.XTemplate'
@@ -212,15 +233,15 @@ Ext.define('Ext.ux.grid.Printer', {
                 records.push(node);
             }, me);
         }
+        // when we got a buffered store we gather the data of the visible Rows
+        // and print the grid in the callback of getRange.
         else if (store instanceof Ext.data.BufferedStore) {
-            // when we got a buffered store we gather the data of the current page
-            // and print the grid in the callback of getRange.
-            var pageSize = store.getPageSize();
-            var start = (store.currentPage - 1) * pageSize;
-            var end = start + pageSize;
-            store.getRange(start, end, {
+            var bufferedRenderer = grid.findPlugin('bufferedrenderer');
+            var firstVisibleRowIdx = bufferedRenderer.getFirstVisibleRowIndex();
+            var lastVisibleRowIdx = bufferedRenderer.getLastVisibleRowIndex();
+            store.getRange(firstVisibleRowIdx, lastVisibleRowIdx, {
                 callback: function(records) {
-                    _printGrid(records);
+                    me.printGrid(grid, records);
                 }
             });
             return;
@@ -229,58 +250,59 @@ Ext.define('Ext.ux.grid.Printer', {
             records = store.getRange();
         }
 
-        _printGrid(records);
+        me.printGrid(grid, records);
         return;
+    },
+    /**
+     * Opens a new tab with the html content for printing.
+     * @private
+     * @param {Ext.grid.Panel} grid The grid to print
+     * @param {Ext.data.Model[]} records
+     */
+    printGrid: function (grid, records) {
+        var me = this;
+        var htmlMarkup = me.getHtmlMarkup(grid);
+        html = Ext.create('Ext.XTemplate', htmlMarkup).apply(records);
 
-        /**
-         * Opens a new tab with the html content for printing.
-         * @private
-         * @param {Ext.data.Model[]} records
-         */
-        function _printGrid(records) {
-            var htmlMarkup = me.getHtmlMarkup(grid);
-            html = Ext.create('Ext.XTemplate', htmlMarkup).apply(records);
-
-            if (me.fireEvent('beforePrint', html) === false) {
-                return; // Print canceled by event
-            }
-
-            //open up a new printing window to write the html to it
-            var win = window.open('', 'printgrid');
-
-            if (!win) {
-                me.fireEvent('print', false /*successful*/ );
-                return;
-            }
-
-            //document must be open and closed
-            try {
-                win.document.open();
-                win.document.write(html);
-                win.document.close();
-
-                if (me.getPrintAutomatically()) {
-                    win.print();
-                }
-
-                //Another way to set the closing of the main
-                if (me.getCloseAutomaticallyAfterPrint()) {
-                    if (Ext.isIE) {
-                        window.close();
-                    }
-                    else {
-                        win.close();
-                    }
-                }
-                me.fireEvent('print', true /*successful*/ );
-            }
-            catch (e) {
-                me.fireEvent('print', false /*successful*/ );
-                return;
-            }
-
-            me.fireEvent('afterPrint');
+        if (me.fireEvent('beforePrint', html) === false) {
+            return; // Print canceled by event
         }
+
+        //open up a new printing window to write the html to it
+        var win = window.open('', 'printgrid');
+
+        if (!win) {
+            me.fireEvent('print', false /*successful*/ );
+            return;
+        }
+
+        //document must be open and closed
+        try {
+            win.document.open();
+            win.document.write(html);
+            win.document.close();
+
+            if (me.getPrintAutomatically()) {
+                win.print();
+            }
+
+            //Another way to set the closing of the main
+            if (me.getCloseAutomaticallyAfterPrint()) {
+                if (Ext.isIE) {
+                    window.close();
+                }
+                else {
+                    win.close();
+                }
+            }
+            me.fireEvent('print', true /*successful*/ );
+        }
+        catch (e) {
+            me.fireEvent('print', false /*successful*/ );
+            return;
+        }
+
+        me.fireEvent('afterPrint');
     },
     /**
      * Returns a set of columns which are visible and contain a dataIndex.
