@@ -261,7 +261,6 @@ Ext.define('Ext.ux.grid.Printer', {
     },
     /**
      * Opens a new tab with the html content for printing.
-     * @private
      * @param {Ext.grid.Panel} grid The grid to print
      * @param {Ext.data.Model[]} records
      */
@@ -275,40 +274,48 @@ Ext.define('Ext.ux.grid.Printer', {
         }
 
         //open up a new printing window to write the html to it
-        var win = window.open('', 'printgrid');
+        var printWindow = window.open('', 'printgrid');
 
-        if (!win) {
+        if (!printWindow) {
             me.fireEvent('print', false /*successful*/ );
             return;
         }
 
         //document must be open and closed
         try {
-            win.document.open();
-            win.document.write(html);
-            win.document.close();
+            var printDocument = printWindow.document;
+            printDocument.open();
+            printDocument.write(html);
+            printDocument.close();
+            printWindow.focus();
 
             if (me.getPrintAutomatically()) {
-                win.print();
+                // we must wait until the window finished loading in order to print
+                Ext.get(printWindow).addListener('load', _onPrintWindowLoad, me, {
+                    single: true
+                });
             }
-
-            //Another way to set the closing of the main
-            if (me.getCloseAutomaticallyAfterPrint()) {
-                if (Ext.isIE) {
-                    window.close();
-                }
-                else {
-                    win.close();
-                }
-            }
-            me.fireEvent('print', true /*successful*/ );
         }
         catch (e) {
             me.fireEvent('print', false /*successful*/ );
             return;
         }
 
+        me.fireEvent('print', true /*successful*/ );
         me.fireEvent('afterPrint');
+
+        /**
+         * The window finished loading, now we can print and if configured, close
+         * the window.
+         * @private
+         */
+        function _onPrintWindowLoad() {
+            printWindow.print();
+
+            if (me.getCloseAutomaticallyAfterPrint()) {
+                (Ext.isIE) ? window.close(): printWindow.close();
+            }
+        }
     },
     /**
      * Returns a set of columns which are visible and contain a dataIndex.
