@@ -447,35 +447,24 @@ Ext.define('Ext.ux.grid.Printer', {
                 summaryFeature: summaryFeature,
                 expanderTemplate: expanderTemplate,
                 renderColumn: function(column, value, rcd, col) {
-                    var me = this;
-                    var meta = {
-                        'align': column.align,
-                        'cellIndex': col,
-                        'classes': [],
-                        'column': column,
-                        'css': '',
-                        'innerCls': '',
-                        'record': rcd,
-                        'recordIndex': grid.store.indexOf ? grid.store.indexOf(rcd) : undefined,
-                        'style': '',
-                        'tdAttr': '',
-                        'tdCls': '',
-                        'unselectableAttr': 'unselectable="on"',
-                        'value': value
-                    };
+                    var grid = this.grid;
+                    var store = grid.getStore();
+                    var view = grid.getView();
+                    var meta = me.getMeta(column, value, rcd, col, store);
+
                     if (column.xtype == 'templatecolumn') {
                         value = column.tpl ? column.tpl.apply(rcd.data) : value;
                     }
                     else if (column.renderer) {
                         if (column instanceof Ext.tree.Column) {
-                            value = column.renderer.call(column, value, meta, rcd, -1, col - 1, me.grid.store, me.grid.view);
+                            value = column.renderer.call(column, value, meta, rcd, -1, col - 1, store, view);
                         }
                         else {
-                            value = column.renderer.call(me.grid, value, meta, rcd, -1, col - 1, me.grid.store, me.grid.view);
+                            value = column.renderer.call(grid, value, meta, rcd, -1, col - 1, store, view);
                         }
                     }
 
-                    return me.getHtml(value, meta);
+                    return this.getHtml(value, meta);
                 },
                 applyTpl: function(rcd) {
                     var html = this.expanderTemplate.apply(rcd.data);
@@ -582,78 +571,8 @@ Ext.define('Ext.ux.grid.Printer', {
                         'value': value
                     };
                 },
-                // Use the getSummary from Ext 4.1.3.  This function for 4.2.1 has been changed without updating the documentation
-                // In 4.2.1, group is a group object from the store (specifically grid.store.groups[i].items).
-                /**
-                 * Get the summary data for a field.
-                 * @private
-                 * @param {Ext.data.Store} store The store to get the data from
-                 * @param {String/Function} type The type of aggregation. If a function is specified it will
-                 * be passed to the stores aggregate function.
-                 * @param {String} field The field to aggregate on
-                 * @param {Boolean} group True to aggregate in grouped mode
-                 * @return {Number/String/Object} See the return type for the store functions.
-                 */
-                getSummary: function(store, type, field, group) {
-                    if (!type) {
-                        return;
-                    }
-
-                    if (Ext.isFunction(type)) {
-                        return store.aggregate(type, null, group, [field]);
-                    }
-
-                    switch (type) {
-                        case 'count':
-                            return store.count(group);
-                        case 'min':
-                            return store.min(field, group);
-                        case 'max':
-                            return store.max(field, group);
-                        case 'sum':
-                            return store.sum(field, group);
-                        case 'average':
-                            return store.average(field, group);
-                        default:
-                            return group ? {} : '';
-                    }
-                },
-                getHtml: function(value, meta) {
-                    if (Ext.isEmpty(value)) {
-                        value = '&nbsp;';
-                    }
-
-                    var html = '<td ';
-                    var tdClasses = '';
-                    if (meta.tdCls) {
-                        tdClasses = meta.tdCls;
-                    }
-                    if (meta.css) {
-                        if (tdClasses.length > 0) {
-                            tdClasses += " " + meta.css;
-                        }
-                        else {
-                            tdClasses = meta.css;
-                        }
-                        if (tdClasses.length > 0) {
-                            html += 'class="' + tdClasses + '"';
-                        }
-                    }
-                    if (meta.tdAttr) {
-                        html += ' ' + meta.tdAttr;
-                    }
-                    html += '><div ';
-                    if (meta.innerCls) {
-                        html += 'class="' + meta.innerCls + '"';
-                    }
-                    html += ' style="text-align: ' + meta.align + ';';
-                    html += meta.style || '';
-                    html += '" ';
-                    html += meta.unselectableAttr || '';
-                    html += '>' + value + '</div></td>';
-
-                    return html;
-                }
+                getSummary: me.getSummary,
+                getHtml: me.getHtml
             }
         ];
     },
@@ -690,6 +609,7 @@ Ext.define('Ext.ux.grid.Printer', {
         }
     },
     generateBody: function(grid, columns, groupFeature) {
+        var me = this;
         var groups = [];
         var fields = grid.store.getProxy().getModel().getFields();
         var hideGroupField = true;
@@ -784,71 +704,18 @@ Ext.define('Ext.ux.grid.Printer', {
                     return c.length;
                 },
                 renderColumn: function(column, value, rcd, col) {
-                    var me = this;
-                    var meta = {
-                        'align': column.align,
-                        'cellIndex': col,
-                        'classes': [],
-                        'column': column,
-                        'css': '',
-                        'innerCls': '',
-                        'record': rcd,
-                        'recordIndex': grid.store.indexOf(rcd),
-                        'style': '',
-                        'tdAttr': '',
-                        'tdCls': '',
-                        'unselectableAttr': 'unselectable="on"',
-                        'value': value
-                    };
+                    var grid = this.grid;
+                    var store = grid.getStore();
+                    var view = grid.getView();
+                    var meta = me.getMeta(column, value, rcd, col, store);
 
                     if (column.renderer) {
-                        value = column.renderer.call(me.grid, value, meta, rcd, -1, col - 1, me.grid.store, me.grid.view);
+                        value = column.renderer.call(grid, value, meta, rcd, -1, col - 1, store, view);
                     }
-                    return me.getHtml(value, meta);
+
+                    return this.getHtml(value, meta);
                 },
-                getHtml: function(value, meta) {
-                    if (Ext.isEmpty(value)) {
-                        value = '&nbsp;';
-                    }
-
-                    var html = '<td ';
-                    var tdClasses = '';
-
-                    if (meta.tdCls) {
-                        //html += 'class="' + meta.tdCls + '"';
-                        tdClasses = meta.tdCls;
-                    }
-
-                    if (meta.css) {
-                        if (tdClasses.length > 0) {
-                            tdClasses += " " + meta.css;
-                        }
-                        else {
-                            tdClasses = meta.css;
-                        }
-                    }
-
-                    if (tdClasses.length > 0) {
-                        html += 'class="' + tdClasses + '"';
-                    }
-
-                    if (meta.tdAttr) {
-                        html += ' ' + meta.tdAttr;
-                    }
-
-                    html += '><div ';
-                    if (meta.innerCls) {
-                        html += 'class="' + meta.innerCls + '"';
-                    }
-
-                    html += ' style="text-align: ' + meta.align + ';';
-                    html += meta.style || '';
-                    html += '" ';
-                    html += meta.unselectableAttr || '';
-                    html += '>' + value + '</div></td>';
-
-                    return html;
-                },
+                getHtml: me.getHtml,
                 renderSummary: function(column, colIndex) {
                     var me = this;
                     var value;
@@ -985,42 +852,7 @@ Ext.define('Ext.ux.grid.Printer', {
                         value: '&#160;'
                     };
                 },
-                // Use the getSummary from Ext 4.1.3.  This function for 4.2.1 has been changed without updating the documentation
-                // In 4.2.1, group is a group object from the store (specifically grid.store.groups[i].items).
-                /**
-                 * Get the summary data for a field.
-                 * @private
-                 * @param {Ext.data.Store} store The store to get the data from
-                 * @param {String/Function} type The type of aggregation. If a function is specified it will
-                 * be passed to the stores aggregate function.
-                 * @param {String} field The field to aggregate on
-                 * @param {Boolean} group True to aggregate in grouped mode
-                 * @return {Number/String/Object} See the return type for the store functions.
-                 */
-                getSummary: function(store, type, field, group) {
-                    if (!type) {
-                        return;
-                    }
-
-                    if (Ext.isFunction(type)) {
-                        return store.aggregate(type, null, group, [field]);
-                    }
-
-                    switch (type) {
-                        case 'count':
-                            return store.count(group);
-                        case 'min':
-                            return store.min(field, group);
-                        case 'max':
-                            return store.max(field, group);
-                        case 'sum':
-                            return store.sum(field, group);
-                        case 'average':
-                            return store.average(field, group);
-                        default:
-                            return group ? {} : '';
-                    }
-                },
+                getSummary: me.getSummary,
                 // return the record having fieldName == value
                 getSummaryRcd: function(rawDataObject, fieldName, value) {
                     if (Ext.isArray(rawDataObject)) {
@@ -1043,5 +875,117 @@ Ext.define('Ext.ux.grid.Printer', {
         ];
 
         return Ext.create('Ext.XTemplate', bodyTpl).apply(groups);
+    },
+    /**
+     * Returns the meta object.
+     * @param   {type} column
+     * @param   {type} value
+     * @param   {type} rcd
+     * @param   {type} col
+     * @param   {type} store
+     * @returns {Object}
+     */
+    getMeta: function(column, value, rcd, col, store) {
+        var me = this;
+        return {
+            'align': column.align,
+            'cellIndex': col,
+            'classes': [],
+            'column': column,
+            'css': '',
+            'innerCls': '',
+            'record': rcd,
+            'recordIndex': (store.indexOf) ? store.indexOf(rcd) : undefined,
+            'style': '',
+            'tdAttr': '',
+            'tdCls': '',
+            'unselectableAttr': 'unselectable="on"',
+            'value': value
+        };
+    },
+    /**
+     * Returns the Html String.
+     * @param   {type} value
+     * @param   {Object} meta
+     * @returns {String}
+     */
+    getHtml: function(value, meta) {
+        if (Ext.isEmpty(value)) {
+            value = '&nbsp;';
+        }
+
+        var html = '<td ';
+        var tdClasses = '';
+
+        if (meta.tdCls) {
+            //html += 'class="' + meta.tdCls + '"';
+            tdClasses = meta.tdCls;
+        }
+
+        if (meta.css) {
+            if (tdClasses.length > 0) {
+                tdClasses += " " + meta.css;
+            }
+            else {
+                tdClasses = meta.css;
+            }
+        }
+
+        if (tdClasses.length > 0) {
+            html += 'class="' + tdClasses + '"';
+        }
+
+        if (meta.tdAttr) {
+            html += ' ' + meta.tdAttr;
+        }
+
+        html += '><div ';
+        if (meta.innerCls) {
+            html += 'class="' + meta.innerCls + '"';
+        }
+
+        html += ' style="text-align: ' + meta.align + ';';
+        html += meta.style || '';
+        html += '" ';
+        html += meta.unselectableAttr || '';
+        html += '>' + value + '</div></td>';
+
+        return html;
+    },
+    // Use the getSummary from Ext 4.1.3.  This function for 4.2.1 has been changed without updating the documentation
+    // In 4.2.1, group is a group object from the store (specifically grid.store.groups[i].items).
+    /**
+     * Get the summary data for a field.
+     * @private
+     * @param {Ext.data.Store} store The store to get the data from
+     * @param {String/Function} type The type of aggregation. If a function is specified it will
+     * be passed to the stores aggregate function.
+     * @param {String} field The field to aggregate on
+     * @param {Boolean} group True to aggregate in grouped mode
+     * @return {Number/String/Object} See the return type for the store functions.
+     */
+    getSummary: function(store, type, field, group) {
+        if (!type) {
+            return;
+        }
+
+        if (Ext.isFunction(type)) {
+            return store.aggregate(type, null, group, [field]);
+        }
+
+        switch (type) {
+            case 'count':
+                return store.count(group);
+            case 'min':
+                return store.min(field, group);
+            case 'max':
+                return store.max(field, group);
+            case 'sum':
+                return store.sum(field, group);
+            case 'average':
+                return store.average(field, group);
+            default:
+                return group ? {} : '';
+        }
     }
 });
