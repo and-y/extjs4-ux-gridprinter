@@ -619,7 +619,7 @@ Ext.define('Ext.ux.grid.Printer', {
                     }
                 },
                 getHtml: function(value, meta) {
-                    if (!Ext.isDefined(value)) {
+                    if (Ext.isEmpty(value)) {
                         value = '&nbsp;';
                     }
 
@@ -807,7 +807,7 @@ Ext.define('Ext.ux.grid.Printer', {
                     return me.getHtml(value, meta);
                 },
                 getHtml: function(value, meta) {
-                    if (!Ext.isDefined(value)) {
+                    if (Ext.isEmpty(value)) {
                         value = '&nbsp;';
                     }
 
